@@ -1,0 +1,49 @@
+import os
+from datetime import datetime
+from pptx import Presentation
+from google.colab import drive
+from google.colab import auth
+from googleapiclient.discovery import build
+
+# Authenticate with Google APIs
+auth.authenticate_user()
+drive_service = build('drive', 'v3')
+docs_service = build('docs', 'v1')
+
+# Step 1: Create a new file in Google Docs
+current_date = datetime.now().strftime("%d-%m-%y")
+file_name = f"{current_date}-RAW"
+
+body = {
+    'title': file_name
+}
+doc = docs_service.documents().create(body=body).execute()
+doc_id = doc['documentId']
+
+print(f"Created new Google Docs file: {file_name}")
+
+# Step 2: Ask the user for the .pptx file name
+pptx_file_name = input("Enter the name of the .pptx file stored in Google Drive: ")
+
+# Step 3: Open the .pptx file and read text from slides
+drive.mount('/content/drive')
+pptx_path = os.path.join("/content/drive/My Drive/", pptx_file_name)
+presentation = Presentation(pptx_path)
+copied_text = []
+
+for slide in presentation.slides:
+    for shape in slide.shapes:
+        if hasattr(shape, "text"):
+            copied_text.append(shape.text)
+
+# Step 4: Paste the copied text into the Google Docs file
+copied_text_str = "\n".join(copied_text)
+docs_service.documents().batchUpdate(
+    documentId=doc_id,
+    body={'requests': [{'insertText': {'text': copied_text_str, 'endOfSegmentLocation': {'segmentId': ''}}}]},
+).execute()
+
+print("Text from PowerPoint slides successfully pasted into the Google Docs file.")
+
+# Step 5: Display the complete process in the terminal
+print("Process completed successfully.")
