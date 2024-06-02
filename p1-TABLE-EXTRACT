@@ -1,0 +1,110 @@
+import os
+from datetime import datetime
+from pptx import Presentation
+from docx import Document
+from google.colab import drive
+from google.colab import auth
+from googleapiclient.discovery import build
+
+# Authenticate with Google APIs
+auth.authenticate_user()
+
+# Mount Google Drive
+drive.mount('/content/drive')
+
+# Function to extract table data and about text from a PPTX file
+def extract_table_and_about_from_pptx(pptx_file):
+    presentation = Presentation(pptx_file)
+    tables_with_about = []
+    for slide in presentation.slides:
+        table_data = None
+        about_text = None
+        for shape in slide.shapes:
+            if shape.has_table:
+                table = shape.table
+                table_data = []
+                for row in table.rows:
+                    row_data = []
+                    for cell in row.cells:
+                        row_data.append(cell.text)
+                    table_data.append(row_data)
+            elif shape.has_text_frame:
+                for paragraph in shape.text_frame.paragraphs:
+                    if paragraph.text.startswith("About"):
+                        about_text = paragraph.text
+        if table_data:
+            tables_with_about.append((about_text, table_data))
+    return tables_with_about
+
+from docx.shared import Pt
+from docx.shared import RGBColor
+from docx.enum.table import WD_TABLE_ALIGNMENT
+
+# Function to insert table data and about text into a DOCX file with adjusted properties
+def insert_table_and_about_into_docx(docx_file, tables_with_about):
+    document = Document()
+    for about_text, table_data in tables_with_about:
+        if about_text:
+            # Add "About" text with bigger font size
+            about_paragraph = document.add_paragraph(about_text)
+            run = about_paragraph.runs[0]
+            font = run.font
+            font.size = Pt(16)
+        else:
+            # Add exception message with bigger font size
+            paragraph = document.add_paragraph("Description not found for this table. Check Internet or Access Main RAW")
+            run = paragraph.runs[0]
+            font = run.font
+            font.size = Pt(16)
+        table = document.add_table(rows=len(table_data), cols=len(table_data[0]))
+        # Adjust table properties
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for row in table.rows:
+            row.height = Pt(12)  # Set row height
+            for cell in row.cells:
+                # Set table border color to black and border width to 1pt
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.color.rgb = RGBColor(0, 0, 0)  # Black color
+                        cell._element.xpath('.//w:tcPr')[0].append(
+                            E.topBord(width="1", color="auto")
+                        )
+                        cell._element.xpath('.//w:tcPr')[0].append(
+                            E.bottomBord(width="1", color="auto")
+                        )
+                        cell._element.xpath('.//w:tcPr')[0].append(
+                            E.startBord(width="1", color="auto")
+                        )
+                        cell._element.xpath('.//w:tcPr')[0].append(
+                            E.endBord(width="1", color="auto")
+                        )
+        for i, row_data in enumerate(table_data):
+            for j, cell_data in enumerate(row_data):
+                cell = table.cell(i, j)
+                cell.text = cell_data
+    document.save(docx_file)
+
+# Main function
+def main():
+    # Step 1: Fetch the name of the PPTX file from Google Drive
+    pptx_file_name = input("Enter the name of the .pptx file stored in Google Drive: ")
+    pptx_file_path = os.path.join("/content/drive/My Drive/", pptx_file_name)
+
+    # Step 2: Extract table data and about text from the PPTX file
+    tables_with_about = extract_table_and_about_from_pptx(pptx_file_path)
+
+    # Step 3: Create a new Google Docs file
+    current_date = datetime.now().strftime("%d-%m-%y")
+    docx_file_name = f"UPDATED-Table-DATA-{current_date}.docx"
+    docx_file_path = os.path.join("/content/drive/My Drive/", docx_file_name)
+
+    # Step 4: Insert table data and about text into the DOCX file
+    insert_table_and_about_into_docx(docx_file_path, tables_with_about)
+
+    print(f"Table data and About text extracted from '{pptx_file_name}' and saved into '{docx_file_name}'.")
+
+    # Print the file path where the DOCX file is saved
+    print("DOCX file saved at:", docx_file_path)
+
+# Execute main function
+main()
