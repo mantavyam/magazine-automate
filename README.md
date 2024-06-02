@@ -1,7 +1,7 @@
-# magazine-automate
+# magazine-DB-automate
 ---
 
-# PowerPoint to Google Docs Converter
+# Custom Automation Development
 
 This Python script automates the process of converting text from PowerPoint slides to a Google Docs file. It reads text from each slide of a PowerPoint presentation (.pptx) stored in a shared Google Drive folder and pastes it into a new Google Docs file.
 
