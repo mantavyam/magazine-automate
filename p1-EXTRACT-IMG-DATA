@@ -1,0 +1,50 @@
+import os
+from datetime import datetime
+from pptx import Presentation
+from google.colab import drive
+
+# Mount Google Drive
+drive.mount('/content/drive')
+
+# Function to create a folder with the current date
+def create_folder():
+    current_date = datetime.now().strftime("%d-%m-%y")
+    folder_name = f"{current_date}-img"
+    folder_path = os.path.join("/content/drive/My Drive/", folder_name)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    return folder_path
+
+# Function to scrape images from PowerPoint slides
+def scrape_images(pptx_file_name):
+    presentation = Presentation(pptx_file_name)
+    folder_path = create_folder()
+    image_count = 0
+
+    for slide_number, slide in enumerate(presentation.slides, start=1):
+        for shape in slide.shapes:
+            if shape.shape_type == 13:  # 13 is the shape type for images
+                image = shape.image
+                image_bytes = image.blob
+                image_format = image.ext
+
+                # Save image to folder
+                image_count += 1
+                image_name = f"{image_count}.{image_format}"
+                image_path = os.path.join(folder_path, image_name)
+
+                with open(image_path, "wb") as img_file:
+                    img_file.write(image_bytes)
+
+                print(f"Found image {image_count} on slide {slide_number} and saved to folder: {image_name}")
+
+    print("All images saved successfully.")
+
+# Main function
+def main():
+    pptx_file_name = input("Enter the name of the .pptx file stored in Google Drive: ")
+    pptx_path = os.path.join("/content/drive/My Drive/", pptx_file_name)
+    scrape_images(pptx_path)
+
+# Execute main function
+main()
