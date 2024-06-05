@@ -1,0 +1,68 @@
+import os
+from datetime import datetime
+from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+from google.colab import drive, auth
+from googleapiclient.discovery import build
+import io
+from PIL import Image
+
+# Authenticate user
+auth.authenticate_user()
+
+# Mount Google Drive
+drive.mount('/content/drive')
+
+# Function to download the PPTX file from Google Drive
+def download_pptx_file(file_name):
+    file_path = f"/content/drive/My Drive/{file_name}"
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"The file {file_name} does not exist in Google Drive.")
+    return file_path
+
+# Function to create a new folder in the same directory as the PPTX file
+def create_image_folder():
+    current_date = datetime.now().strftime("%d-%m-%y")
+    folder_name = f"{current_date}-img"
+    folder_path = f"/content/drive/My Drive/{folder_name}"
+    os.makedirs(folder_path, exist_ok=True)
+    return folder_path
+
+# Function to extract images from slides and save them
+def extract_and_save_images(pptx_path, folder_path):
+    presentation = Presentation(pptx_path)
+    image_index = 1
+    
+    for slide_number, slide in enumerate(presentation.slides, start=1):
+        slide_heading = "No_Heading"  # Default if no heading is found
+        for shape in slide.shapes:
+            if shape.has_text_frame and shape.text_frame.text:
+                # Assuming the first shape with text is the heading
+                slide_heading = shape.text_frame.text.split("\n")[0]
+                break
+        
+        for shape in slide.shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                image = shape.image
+                image_stream = io.BytesIO(image.blob)
+                img = Image.open(image_stream)
+                
+                img_file_name = f"{image_index}-{slide_heading[:30].replace(' ', '_')}.png"
+                img_file_path = os.path.join(folder_path, img_file_name)
+                img.save(img_file_path)
+                
+                print(f"Found img {image_index} saved to {folder_path}")
+                image_index += 1
+    
+    print("All images saved successfully.")
+
+# Main function
+def main():
+    pptx_file_name = input("Enter the name of the PPTX file (including extension) saved in Google Drive: ")
+    pptx_path = download_pptx_file(pptx_file_name)
+    
+    folder_path = create_image_folder()
+    extract_and_save_images(pptx_path, folder_path)
+
+# Execute main function
+main()
