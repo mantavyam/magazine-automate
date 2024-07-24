@@ -10,6 +10,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import os
 import re
+from datetime import datetime
 
 # Authenticate and mount Google Drive
 auth.authenticate_user()
@@ -54,6 +55,13 @@ def extract_text_and_tables_from_pptx(pptx_path):
 # Function to create a DOCX file with extracted data
 def create_docx_with_data(docx_path, slides_data):
     document = Document()
+
+    # Add the current date as a title (formatted as DD-MM-YY)
+    current_date = datetime.now().strftime("%d-%m-%y")
+    title = document.add_heading(level=0)
+    run = title.add_run(current_date)
+    run.bold = True
+    run.font.size = Pt(24)
 
     for slide_index, slide in enumerate(slides_data):
         if slide_index > 0:
@@ -109,7 +117,7 @@ def format_docx(docx_path):
 # Function to identify categories and make them heading level 1
 def identify_and_make_headings(docx_path):
     document = Document(docx_path)
-    headings_style = document.styles['Heading1']
+    headings_style = document.styles['Heading 1']
     paragraphs = list(document.paragraphs)
 
     for i, paragraph in enumerate(paragraphs):
@@ -119,18 +127,17 @@ def identify_and_make_headings(docx_path):
 
     document.save(docx_path)
 
-
 # Main function
 def main():
     # Get the PPTX file name from user input
-    pptx_file_name = input("Enter the name of the PPTX file stored in Google Drive (e.g., '1-1-24.pptx'): ")
+    pptx_file_name = input("Enter the exact name of the PPTX file stored in Google Drive (e.g., '1-1-24.pptx'): ")
     pptx_file_path = os.path.join("/content/drive/My Drive/", pptx_file_name)
 
     # Extract text and table data from the PPTX file
     slides_data = extract_text_and_tables_from_pptx(pptx_file_path)
 
     # Create a new DOCX file and save it to Google Drive
-    docx_file_name = f"{pptx_file_name.rsplit('.', 1)[0]}-RAW.docx"
+    docx_file_name = f"{pptx_file_name.rsplit('.', 1)[0]}-NEWSLETTER-RAW.docx"
     docx_file_path = os.path.join("/content/drive/My Drive/", docx_file_name)
     create_docx_with_data(docx_file_path, slides_data)
 
