@@ -1,0 +1,63 @@
+/* Reset margins and padding */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f0f0f0;
+}
+
+.a4-page {
+  width: 210mm;
+  height: 297mm;
+  padding: 0;
+  margin: 0 auto;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  position: relative;
+}
+
+.header, .footer {
+  background-color: #0097B2;
+  width: 100%;
+  height: 15mm;
+}
+
+.header {
+  position: absolute;
+  top: 0;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+}
+
+.content {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10mm; /* Left and right padding */
+  height: calc(297mm - 30mm); /* Total height minus header and footer */
+  align-items: stretch;
+  margin-top: 15mm; /* Start content after header */
+  margin-bottom: 15mm; /* End content before footer */
+  position: relative;
+}
+
+.column {
+  flex-grow: 1;
+  height: 100%; /* Full height between header and footer */
+  border-left: 0mm solid #000; /* Leftmost column has no border */
+}
+
+.column:first-child {
+  border-left: none;
+}
+
+.vertical-line {
+  width: 0.25mm;
+  background-color: #000;
+  height: 100%; /* Full height between header and footer */
+}
