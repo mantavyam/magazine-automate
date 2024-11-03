@@ -1,0 +1,115 @@
+from google.colab import drive
+import docx
+import os
+!pip install python-docx
+
+def mount_drive():
+    """Mount Google Drive and return the mount point."""
+    drive.mount('/content/drive')
+    return '/content/drive/MyDrive/'
+
+def process_document(doc_path):
+    """
+    Process the document to extract questions and answers based on text color.
+    Returns a dictionary of question numbers and their answers.
+    """
+    # Load the document
+    doc = docx.Document(doc_path)
+    answers_dict = {}
+    current_question = 0
+    
+    # Process each paragraph
+    for paragraph in doc.paragraphs:
+        text = paragraph.text.strip()
+        if text.startswith('Q.'):
+            current_question += 1
+            
+        # Check for colored text in the paragraph
+        for run in paragraph.runs:
+            if run.font.color.rgb and text.strip():  # If text has color
+                answers_dict[current_question] = text.strip()
+                break
+    
+    return answers_dict
+
+def create_answer_table(doc_path, answers):
+    """
+    Create a table at the end of the document with question numbers and answers.
+    """
+    # Load the document
+    doc = docx.Document(doc_path)
+    
+    # Add page break
+    doc.add_page_break()
+    
+    # Add heading for answer key
+    doc.add_heading('Answer Key', level=1)
+    
+    # Create table
+    table = doc.add_table(rows=len(answers) + 1, cols=2)
+    
+    # Add headers with formatting
+    header_cells = table.rows[0].cells
+    header_cells[0].text = 'Question Number'
+    header_cells[1].text = 'Answer'
+    
+    # Make headers bold
+    for cell in header_cells:
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.bold = True
+    
+    # Add borders to all cells (basic border)
+    for row in table.rows:
+        for cell in row.cells:
+            # Add minimal padding to cells
+            for paragraph in cell.paragraphs:
+                paragraph.paragraph_format.space_before = docx.shared.Pt(6)
+                paragraph.paragraph_format.space_after = docx.shared.Pt(6)
+    
+    # Add data
+    for i, (question, answer) in enumerate(answers.items(), 1):
+        row_cells = table.rows[i].cells
+        row_cells[0].text = str(question)
+        row_cells[1].text = str(answer)
+    
+    # Save the document with a new name to avoid any potential saving issues
+    base_name = os.path.splitext(doc_path)[0]
+    new_path = f"{base_name}_with_answers.docx"
+    doc.save(new_path)
+    return new_path
+
+def main():
+    """Main function to process the document."""
+    try:
+        # Mount Google Drive
+        drive_path = mount_drive()
+        print("Google Drive mounted successfully.")
+        
+        # Get filename from user
+        filename = input("Enter the name of your document file (with .docx extension): ")
+        file_path = os.path.join(drive_path, filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            print(f"Error: File '{filename}' not found in Google Drive root folder.")
+            return
+        
+        print("Processing document...")
+        # Process the document
+        answers = process_document(file_path)
+        
+        if answers:
+            # Create answer table
+            new_file_path = create_answer_table(file_path, answers)
+            print(f"Answer table has been created successfully!")
+            print(f"Processed {len(answers)} questions.")
+            print(f"New file saved as: {os.path.basename(new_file_path)}")
+        else:
+            print("No questions with colored answers found in the document.")
+            
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    main()
