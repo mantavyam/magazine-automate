@@ -1,12 +1,50 @@
 from google.colab import drive
 import docx
 import os
-!pip install python-docx
 
 def mount_drive():
     """Mount Google Drive and return the mount point."""
     drive.mount('/content/drive')
     return '/content/drive/MyDrive/'
+
+def number_questions(doc_path):
+    """
+    Add sequential numbering to questions starting with 'Q.'
+    Returns the path of the new numbered document.
+    """
+    # Load the document
+    doc = docx.Document(doc_path)
+    question_count = 0
+    
+    # Process each paragraph
+    for paragraph in doc.paragraphs:
+        if paragraph.text.strip().startswith('Q.'):
+            question_count += 1
+            # Get the text after 'Q.' and preserve any existing formatting
+            original_text = paragraph.text[2:].strip()  # Remove 'Q.' and any immediate spaces
+            
+            # Clear the paragraph
+            paragraph.clear()
+            
+            # Add the new numbered question format
+            run = paragraph.add_run(f'Q{question_count}. {original_text}')
+            
+            # Preserve original formatting if any
+            for old_run in paragraph.runs[1:]:  # Skip the first run which we just added
+                new_run = paragraph.add_run(old_run.text)
+                # Copy formatting
+                new_run.bold = old_run.bold
+                new_run.italic = old_run.italic
+                new_run.underline = old_run.underline
+                if old_run.font.color.rgb:
+                    new_run.font.color.rgb = old_run.font.color.rgb
+    
+    # Save as new document with '_numbered' suffix
+    base_name = os.path.splitext(doc_path)[0]
+    new_path = f"{base_name}_numbered.docx"
+    doc.save(new_path)
+    print(f"Added numbering to {question_count} questions.")
+    return new_path
 
 def process_document(doc_path):
     """
@@ -21,7 +59,7 @@ def process_document(doc_path):
     # Process each paragraph
     for paragraph in doc.paragraphs:
         text = paragraph.text.strip()
-        if text.startswith('Q.'):
+        if text.startswith('Q'):  # Changed to handle both 'Q.' and 'Q1.' format
             current_question += 1
             
         # Check for colored text in the paragraph
@@ -73,7 +111,7 @@ def create_answer_table(doc_path, answers):
         row_cells[0].text = str(question)
         row_cells[1].text = str(answer)
     
-    # Save the document with a new name to avoid any potential saving issues
+    # Save the document with a new name
     base_name = os.path.splitext(doc_path)[0]
     new_path = f"{base_name}_with_answers.docx"
     doc.save(new_path)
@@ -95,18 +133,32 @@ def main():
             print(f"Error: File '{filename}' not found in Google Drive root folder.")
             return
         
-        print("Processing document...")
-        # Process the document
-        answers = process_document(file_path)
+        # Ask user what they want to do
+        print("\nWhat would you like to do?")
+        print("1. Add question numbering only")
+        print("2. Create answer table only")
+        print("3. Both numbering and answer table")
+        choice = input("Enter your choice (1, 2, or 3): ")
         
-        if answers:
-            # Create answer table
-            new_file_path = create_answer_table(file_path, answers)
-            print(f"Answer table has been created successfully!")
-            print(f"Processed {len(answers)} questions.")
-            print(f"New file saved as: {os.path.basename(new_file_path)}")
-        else:
-            print("No questions with colored answers found in the document.")
+        if choice in ['1', '3']:
+            print("\nAdding question numbering...")
+            numbered_path = number_questions(file_path)
+            print(f"Numbered document saved as: {os.path.basename(numbered_path)}")
+            
+            if choice == '3':
+                file_path = numbered_path  # Use the numbered document for answer table
+        
+        if choice in ['2', '3']:
+            print("\nProcessing document for answers...")
+            answers = process_document(file_path)
+            
+            if answers:
+                new_file_path = create_answer_table(file_path, answers)
+                print(f"Answer table has been created successfully!")
+                print(f"Processed {len(answers)} questions.")
+                print(f"Final file saved as: {os.path.basename(new_file_path)}")
+            else:
+                print("No questions with colored answers found in the document.")
             
     except Exception as e:
         print(f"An error occurred: {str(e)}")
