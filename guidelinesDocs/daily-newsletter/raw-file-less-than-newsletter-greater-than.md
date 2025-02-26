@@ -78,6 +78,20 @@ Remove repetitive occurrence of the word: "NEWSLIDE" using CTRL + H.
 
 ### MCQ Table /w AI
 
+#### METHOD 1:
+
+Using the URL to Google Colaboratory, In Process 1 of \[NEWSLETTER-DAILY], Go to **"GENERATE QA /W AI"** and enter the full name of Newsletter Document ex: 'NEWSLETTER-DD-MM-YY-RAW.docx', the API will process the document and 4 responses will be presented, then Manually Read all 4 Responses one by one and choose only the best table with a good level of Questions-Answers.
+
+{% embed url="https://colab.research.google.com/drive/1S6_rGzKJbys0IzNyLCLsiEGPZaCU6k3_?authuser=3#scrollTo=oYGsgKV_uy2f" %}
+GO TO COLAB CODE
+{% endembed %}
+
+{% embed url="https://drive.google.com/file/d/1iuOcjKT2beOgjvf-KKSteBbj4bE7oz4g/view?usp=sharing" %}
+VIDEO DEMO
+{% endembed %}
+
+#### METHOD 2:&#x20;
+
 After the Docs file is edited as instructed above, we'll save the file as Markdown (.md)
 
 <figure><img src="../.gitbook/assets/DOWNLOAD-PDF.png" alt=""><figcaption><p>Save the File as PDF</p></figcaption></figure>
